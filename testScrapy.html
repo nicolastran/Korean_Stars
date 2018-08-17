@@ -1,0 +1,98 @@
+/html/body/div/div[2]/div[1]/div[1]/span[1]
+
+
+## https://en.wikipedia.org/wiki/Yoon_Ji-hye
+## Inpect/Copy element
+<td>
+<span style="display:none"> (<span class="bday">1979-11-10</span>) </span>November 10, 1979<span class="noprint ForceAgeToShow"> (age&nbsp;38)</span><br><span class="birthplace"><a href="/wiki/South_Korea" title="South Korea">South Korea</a></span></td>
+
+## Inspect/Copy Xpath
+//*[@id="mw-content-text"]/div/table[1]/tbody/tr[1]/th/span
+//*[@id="mw-content-text"]/div/table[1]/tbody/tr[2]/th
+//*[@id="mw-content-text"]/div/table[1]/tbody/tr[2]/td
+
+#mw-content-text > div > table.infobox.biography.vcard > tbody > tr:nth-child(1) > th > span
+
+## Copy Selector
+#mw-content-text > div > table.infobox.biography.vcard > tbody > tr:nth-child(2) > td
+
+########
+scrapy shell
+from scrapy.selector import Selector
+
+In [3]: sel = Selector(text='https://en.wikipedia.org/wiki/Yoon_Ji-hye')
+
+In [4]: sel.extract
+Out[4]: <bound method Selector.get of <Selector xpath=None data='<html><body><p>https://en.wikipedia.org/'>>
+
+sel.xpath('//text()').extract()
+Out[10]: ['https://en.wikipedia.org/wiki/Yoon_Ji-hye']
+
+## Test
+fetch("https://en.wikipedia.org/wiki/Yoon_Ji-hye")
+
+Inpect/Copy element
+<td>
+<span style="display:none"> (<span class="bday">1979-11-10</span>) 
+</span>November 10, 1979<span class="noprint ForceAgeToShow"> (age&nbsp;38)</span><br>
+<span class="birthplace"><a href="/wiki/South_Korea" title="South Korea">South Korea</a></span>
+</td>
+
+response.xpath('//*[@id="mw-content-text"]/div/table[1]/tbody/tr[1]/th/span/text()').extract()
+['Yoon Ji-hye']
+
+response.xpath('//*[@class="bday"]')
+Out[9]: [<Selector xpath='//*[@class="bday"]' data='<span class="bday">1979-11-10</span>'>]
+
+In [10]: response.xpath('//*[@class="bday"]').extract()
+Out[10]: ['<span class="bday">1979-11-10</span>']
+
+In [11]: response.xpath('//*[@class="bday"]/text()').extract()
+Out[11]: ['1979-11-10']
+
+In [30]: response.xpath('//*[@class="birthplace"]/a/@href').extract()
+Out[30]: ['/wiki/South_Korea']
+
+In [33]: response.xpath('//*[@class="birthplace"]/a/@title').extract()
+Out[33]: ['South Korea']
+
+In [34]: response.xpath('//*[@class="birthplace"]/a/text()').extract()
+Out[34]: ['South Korea']
+
+## Next page
+next_page_url = response.xpath('//*[@class="next"]/a/@ref').extract_first().  -- '/page/2/''
+absolute_next_page_url = response.urljoin(next_page_url)    -- 'http://quote.toscrape.com/page/2/'
+yield scrapy.Request(absolute_next_page_url)
+
+import scrapy
+
+
+class QuotesSpider(scrapy.Spider):
+    name = "quotes"
+    allowed_domains = ["quotes.toscrape.com"]
+    start_urls = (
+        'http://quotes.toscrape.com/',
+    )
+
+    def parse(self, response):
+        quotes = response.xpath('//*[@class="quote"]')
+        for quote in quotes:
+            text = quote.xpath('.//*[@class="text"]/text()').extract_first()
+            author = quote.xpath('.//*[@itemprop="author"]/text()').extract_first()
+            tags = quote.xpath('.//*[@itemprop="keywords"]/@content').extract_first()
+
+            yield{'Text': text,
+                  'Author': author,
+                  'Tags': tags}
+
+        next_page_url = response.xpath('//*[@class="next"]/a/@href').extract_first()
+        absolute_next_page_url = response.urljoin(next_page_url)
+        yield scrapy.Request(absolute_next_page_url)
+
+
+## Run the script and store in a file
+## scrapy crawl quotes -o items.csv
+## scrapy crawl quotes -o items.json
+
+
+

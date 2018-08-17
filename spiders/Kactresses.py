@@ -17,7 +17,7 @@ class KactressesSpider(scrapy.Spider):
 
     def parse(self, response):
         a_tag = response.xpath('//a/text()').extract()
-        a_href = response.xpath("//a/@href").extract()
+        #a_href = response.xpath("//a/@href").extract()
         
         yield{'a Tag': a_tag}
-        yield{'a href': a_href}
+        #yield{'a href': a_href}
